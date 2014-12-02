@@ -12,5 +12,9 @@
         </tr>
 %end
     </table>
+    <a href="/static/register.html">Register</a> <br>
+    <a href="/static/signin.html">Sign in</a> <br>
+    <a href="/info">info</a> <br>
+{{text}}
 </body>
 </html>

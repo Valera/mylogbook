@@ -1,11 +1,13 @@
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Date, Boolean
+import datetime
+from contextlib import contextmanager
+
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-import datetime
 
 
-engine = create_engine('sqlite:///:memory:', echo=True)
+engine = create_engine('sqlite:///db.sqlite', echo=True)
 
 
 Base = declarative_base()
@@ -26,6 +28,7 @@ class Context(Base):
 class Project(Base):
     __tablename__ = 'projects'
     id = Column(Integer, primary_key=True)
+    user = Column(Integer, ForeignKey('users.id'))
     name = Column(String(200))
     description = Column(String(2000))
     start_date = Column(Date)
@@ -71,16 +74,80 @@ class Task(Base):
     postpone_mode = Column(String)
 
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(20), unique=True)
+    email = Column(String(200), unique=True)
+    salt = Column(String(80))  # TODO: use salt
+    password = Column(String(80))
+
+    def __init__(self, name, email, password):
+        self.name = name
+        self.email = email
+        self.password = password
+
+
+class UserSession(Base):
+    __tablename__ = "usersessions"
+    id = Column(Integer, primary_key=True)
+    user = Column(Integer, ForeignKey("users.id"))
+    token = Column(String(40))
+
+    def __init__(self, user):
+        import random
+
+        self.user = user.id
+        self.token = str(random.randrange(0, 10 ** 40)).zfill(40)
+
+
+class WorkUnit(Base):
+    __tablename__ = "workunits"
+    id = Column(Integer, primary_key=True)
+    project = Column(Integer, ForeignKey("projects.id"))
+    date = Column(Date)
+    unit_type = Column(Integer)
+    info = Column(String(200))
+
+
+class Contact(Base):
+    """
+    Now Contact class is mostly for birthday reminders.
+    """
+    __tablename__ = "contacts"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    birthday = Column(Date)
+
+
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
 
-def main():
+@contextmanager
+def session_scope():
+    """Provide a transactional scope around a series of operations."""
     session = Session()
-    pr = Project("hello", "first project")
-    session.add(pr)
-    Project.sel
-    session.commit()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def main():
+    with session_scope() as session:
+        pr = Project("hello", "first project")
+        session.add(pr)
+        session.commit()
+        print(session.query(User).all())
+        # pr = Project("hello", 1)
+        # session.add(pr)
+    with session_scope() as session:
+        print(session.query(User).all())
 
 
 if __name__ == "__main__":

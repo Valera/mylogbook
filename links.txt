@@ -1,0 +1,4 @@
+http://getbootstrap.com/
+http://ru.m.wikibooks.org/wiki/SQLAlchemy
+http://docs.sqlalchemy.org/en/rel_0_9/core/tutorial.html
+http://docs.sqlalchemy.org/en/rel_0_9/orm/tutorial.html
