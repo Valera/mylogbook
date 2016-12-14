@@ -1,0 +1,6 @@
+.idea/
+.ropeproject/
+__pycache__/
+db.sqlite
+
+*~

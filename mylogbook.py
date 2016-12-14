@@ -41,10 +41,34 @@ def signin():
     return redirect("/")
 
 
+def get_user(session):
+    id_string = request.get_cookie('id', '')
+    db_response = session.query(storage.UserSession).filter_by(token=id_string).all()
+    assert(len(db_response) < 2)
+    if len(db_response) == 0:
+        return None
+    user = session.query(storage.User).filter_by(id=db_response[0].user).all()[0]
+    return user
+
+@route("/projects")
+def show_projects():
+    with storage.session_scope() as session:
+        user = get_user(session)
+        if not user:
+            return 'Please login'
+        projects = []
+        for proj in session.query(storage.Project).filter_by(user=user.id).all():
+            projects.append(proj.name)
+        return template('index', text='\n'.join(projects), user_name='')
+
+
 @route('/info')
 def info():
     token = request.get_cookie('id', '*')
-    return template('index', text=token)
+    with storage.session_scope() as session:
+        username = get_user(session)
+        username = username.name if username else 'Unknown'
+    return template('index', text=token, user_name=username)
 
 
 run(host='localhost', port=8081, reloader=True)
